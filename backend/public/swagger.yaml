@@ -1,0 +1,877 @@
+openapi: 3.0.3
+info:
+  title: Teste Tray - Sales Commission API
+  description: |
+    API para gerenciamento de vendas e comissões de vendedores
+    
+    ## Autenticação
+    Esta API usa JWT (JSON Web Tokens) para autenticação. Para acessar endpoints protegidos:
+    1. Faça login em `/auth/login` para obter o token
+    2. Inclua o token no header `Authorization: Bearer {token}`
+    
+    ## Tratamento de Erros JWT
+    A API possui validação robusta de tokens JWT:
+    - **Formato**: Tokens devem ter exatamente 3 segmentos separados por pontos
+    - **Base64**: Cada segmento deve usar codificação base64url válida
+    - **Validade**: Tokens expirados ou inválidos retornam erro 401
+    - **Usuário**: O usuário associado ao token deve existir e estar ativo
+    
+    ## Paginação
+    Endpoints de listagem suportam paginação server-side:
+    - `page`: Número da página (padrão: 1)
+    - `per_page`: Itens por página (padrão: 15, máximo: 100)
+    - Resposta inclui metadados de paginação
+  version: 1.0.0
+  contact:
+    name: API Support
+    email: admin@teste-tray.com
+
+servers:
+  - url: http://localhost:8080/api
+    description: Servidor local
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          example: admin@teste-tray.com
+        password:
+          type: string
+          example: password
+
+    LoginResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: Login realizado com sucesso
+        data:
+          type: object
+          properties:
+            access_token:
+              type: string
+              example: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...
+            token_type:
+              type: string
+              example: bearer
+            expires_in:
+              type: integer
+              example: 3600
+            user:
+              $ref: '#/components/schemas/User'
+
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: Admin User
+        email:
+          type: string
+          example: admin@teste-tray.com
+        role:
+          type: string
+          example: admin
+        permissions:
+          type: array
+          items:
+            type: string
+          example: ["view_sales", "create_sales", "view_sellers"]
+
+    Seller:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: João Silva
+        email:
+          type: string
+          example: joao@example.com
+        sales:
+          type: array
+          items:
+            $ref: '#/components/schemas/SaleBasic'
+          description: Vendas do vendedor (carregadas quando incluídas)
+        created_at:
+          type: string
+          format: date-time
+          example: 2025-10-20T10:00:00Z
+        updated_at:
+          type: string
+          format: date-time
+          example: 2025-10-20T10:00:00Z
+
+    SellerBasic:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: João Silva
+        email:
+          type: string
+          example: joao@example.com
+        created_at:
+          type: string
+          format: date-time
+          example: 2025-10-20T10:00:00Z
+        updated_at:
+          type: string
+          format: date-time
+          example: 2025-10-20T10:00:00Z
+
+    SaleBasic:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        seller_id:
+          type: integer
+          example: 1
+        amount:
+          type: number
+          format: float
+          example: 1500.50
+        formatted_amount:
+          type: string
+          example: "R$ 1.500,50"
+          description: Valor formatado em Real Brasileiro
+        sold_at:
+          type: string
+          format: date-time
+          example: 2025-10-20T14:30:00Z
+        created_at:
+          type: string
+          format: date-time
+          example: 2025-10-20T10:00:00Z
+        updated_at:
+          type: string
+          format: date-time
+          example: 2025-10-20T10:00:00Z
+
+    CreateSellerRequest:
+      type: object
+      required:
+        - name
+        - email
+      properties:
+        name:
+          type: string
+          example: João Silva
+        email:
+          type: string
+          format: email
+          example: joao@example.com
+
+    Sale:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        seller_id:
+          type: integer
+          example: 1
+        amount:
+          type: number
+          format: float
+          example: 1500.50
+        formatted_amount:
+          type: string
+          example: "R$ 1.500,50"
+          description: Valor formatado em Real Brasileiro
+        sold_at:
+          type: string
+          format: date-time
+          example: 2025-10-20T14:30:00Z
+        seller:
+          allOf:
+            - $ref: '#/components/schemas/SellerBasic'
+          description: Dados do vendedor (carregados quando incluídos)
+        created_at:
+          type: string
+          format: date-time
+          example: 2025-10-20T10:00:00Z
+        updated_at:
+          type: string
+          format: date-time
+          example: 2025-10-20T10:00:00Z
+
+    CreateSaleRequest:
+      type: object
+      required:
+        - seller_id
+        - amount
+        - sold_at
+      properties:
+        seller_id:
+          type: integer
+          example: 1
+        amount:
+          type: number
+          format: float
+          example: 1500.50
+        sold_at:
+          type: string
+          format: date-time
+          example: 2025-10-20T14:30:00Z
+
+    ResendCommissionRequest:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+          example: 2025-10-20
+
+    ApiResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          type: object
+
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: Erro na requisição
+
+    PaginatedResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: Dados recuperados com sucesso
+        data:
+          type: array
+          items:
+            type: object
+        pagination:
+          type: object
+          properties:
+            current_page:
+              type: integer
+              example: 1
+            per_page:
+              type: integer
+              example: 15
+            total:
+              type: integer
+              example: 50
+            last_page:
+              type: integer
+              example: 4
+            from:
+              type: integer
+              example: 1
+            to:
+              type: integer
+              example: 15
+
+    PaginatedSellersResponse:
+      allOf:
+        - $ref: '#/components/schemas/PaginatedResponse'
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/Seller'
+
+    PaginatedSalesResponse:
+      allOf:
+        - $ref: '#/components/schemas/PaginatedResponse'
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/Sale'
+
+paths:
+  /auth/login:
+    post:
+      tags:
+        - Autenticação
+      summary: Login do usuário
+      description: Autentica o usuário e retorna token JWT
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login realizado com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          description: Credenciais inválidas
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/logout:
+    post:
+      tags:
+        - Autenticação
+      summary: Logout do usuário
+      description: Invalida o token JWT do usuário
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Logout realizado com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '401':
+          description: Token inválido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/user:
+    get:
+      tags:
+        - Autenticação
+      summary: Dados do usuário autenticado
+      description: Retorna informações do usuário logado
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Dados do usuário recuperados
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          user:
+                            $ref: '#/components/schemas/User'
+        '401':
+          description: Token inválido, expirado ou malformado
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ErrorResponse'
+                  - type: object
+                    properties:
+                      message:
+                        type: string
+                        enum:
+                          - "Token de autenticação não fornecido"
+                          - "Token de autenticação inválido"  
+                          - "Token de autenticação inválido ou expirado"
+                          - "Usuário não encontrado"
+                          - "O formato do token JWT é inválido ou contém caracteres inválidos"
+                        example: "Token de autenticação inválido ou expirado"
+
+  /sellers:
+    get:
+      tags:
+        - Vendedores
+      summary: Listar vendedores
+      description: Retorna lista paginada de vendedores
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          schema:
+            type: string
+            example: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9
+        - name: page
+          in: query
+          required: false
+          description: Número da página
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+            example: 1
+        - name: per_page
+          in: query
+          required: false
+          description: Items por página
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 15
+            example: 15
+      responses:
+        '200':
+          description: Lista paginada de vendedores
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedSellersResponse'
+        '403':
+          description: Sem permissão para visualizar vendedores
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    post:
+      tags:
+        - Vendedores
+      summary: Criar vendedor
+      description: Cria um novo vendedor
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSellerRequest'
+      responses:
+        '201':
+          description: Vendedor criado com sucesso
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Seller'
+        '409':
+          description: Email já existe
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Dados inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /sales:
+    get:
+      tags:
+        - Vendas
+      summary: Listar vendas
+      description: Retorna lista paginada de vendas
+      security:
+        - bearerAuth: []
+        - name: page
+          in: query
+          required: false
+          description: Número da página
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+            example: 1
+        - name: per_page
+          in: query
+          required: false
+          description: Items por página
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 15
+            example: 15
+      responses:
+        '200':
+          description: Lista paginada de vendas
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedSalesResponse'
+
+    post:
+      tags:
+        - Vendas
+      summary: Criar venda
+      description: Cria uma nova venda
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSaleRequest'
+      responses:
+        '201':
+          description: Venda criada com sucesso
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Sale'
+        '404':
+          description: Vendedor não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Dados inválidos (valor deve ser maior que zero)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /sellers/{sellerId}/sales:
+    get:
+      tags:
+        - Vendas
+      summary: Vendas por vendedor
+      description: Retorna vendas paginadas de um vendedor específico
+      security:
+        - bearerAuth: []
+        - name: sellerId
+          in: path
+          required: true
+          description: ID do vendedor
+          schema:
+            type: integer
+            example: 1
+        - name: page
+          in: query
+          required: false
+          description: Número da página
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+            example: 1
+        - name: per_page
+          in: query
+          required: false
+          description: Items por página
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 15
+            example: 15
+        - name: date
+          in: query
+          required: false
+          description: Filtrar por data específica (YYYY-MM-DD)
+          schema:
+            type: string
+            format: date
+            example: 2025-10-20
+      responses:
+        '200':
+          description: Vendas paginadas do vendedor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedSalesResponse'
+        '404':
+          description: Vendedor não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /admin/sellers/{sellerId}/resend-commission:
+    post:
+      tags:
+        - Administração
+      summary: Reenviar comissão do vendedor
+      description: Enfileira job para reenvio de email de comissão
+      security:
+        - bearerAuth: []
+        - name: sellerId
+          in: path
+          required: true
+          description: ID do vendedor
+          schema:
+            type: integer
+            example: 1
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResendCommissionRequest'
+      responses:
+        '200':
+          description: Email enfileirado com sucesso
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          seller_id:
+                            type: integer
+                          date:
+                            type: string
+        '404':
+          description: Vendedor não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /admin/sales/{saleId}/resend-commission:
+    post:
+      tags:
+        - Administração
+      summary: Reenviar comissão de venda específica
+      description: Enfileira job para reenvio de email de comissão de uma venda específica
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: saleId
+          in: path
+          required: true
+          description: ID da venda
+          schema:
+            type: integer
+            example: 1
+      responses:
+        '200':
+          description: Email de comissão enfileirado com sucesso
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        nullable: true
+                      message:
+                        type: string
+                        example: "Email de comissão da venda reenviado com sucesso"
+        '404':
+          description: Venda não encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Token JWT inválido ou expirado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /admin/run-daily-mails:
+    post:
+      tags:
+        - Administração
+      summary: Executar emails diários
+      description: Enfileira jobs para envio de emails diários para todos os vendedores e resumo para admin
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Emails diários enfileirados
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          date:
+                            type: string
+                            format: date
+                          sellers_count:
+                            type: integer
+
+  /dashboard/stats:
+    get:
+      tags:
+        - Dashboard
+      summary: Estatísticas do Dashboard
+      description: Retorna estatísticas gerais para o dashboard incluindo totais, top vendedores e vendas por mês
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Estatísticas recuperadas com sucesso
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          general:
+                            type: object
+                            properties:
+                              total_sellers:
+                                type: integer
+                                example: 15
+                              total_sales:
+                                type: integer
+                                example: 120
+                              total_sales_amount:
+                                type: number
+                                example: 25000.50
+                              formatted_total_sales_amount:
+                                type: string
+                                example: "R$ 25.000,50"
+                              total_commissions:
+                                type: number
+                                example: 2125.04
+                              formatted_total_commissions:
+                                type: string
+                                example: "R$ 2.125,04"
+                              average_sale_amount:
+                                type: number
+                                example: 208.34
+                              formatted_average_sale_amount:
+                                type: string
+                                example: "R$ 208,34"
+                          today:
+                            type: object
+                            properties:
+                              sales_count:
+                                type: integer
+                                example: 5
+                              sales_amount:
+                                type: number
+                                example: 1500.00
+                              formatted_sales_amount:
+                                type: string
+                                example: "R$ 1.500,00"
+                          this_month:
+                            type: object
+                            properties:
+                              sales_count:
+                                type: integer
+                                example: 45
+                              sales_amount:
+                                type: number
+                                example: 12000.00
+                              formatted_sales_amount:
+                                type: string
+                                example: "R$ 12.000,00"
+                          top_sellers:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                id:
+                                  type: integer
+                                  example: 3
+                                name:
+                                  type: string
+                                  example: "Arne Rippin"
+                                email:
+                                  type: string
+                                  example: "ikreiger@example.org"
+                                sales_count:
+                                  type: integer
+                                  example: 12
+                                total_amount:
+                                  type: string
+                                  example: "8433925.65"
+                                formatted_total_amount:
+                                  type: string
+                                  example: "R$ 8.433.925,65"
+                                total_commission:
+                                  type: string
+                                  example: "716846.01"
+                                formatted_total_commission:
+                                  type: string
+                                  example: "R$ 716.846,01"
+                          sales_by_month:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                month:
+                                  type: string
+                                  example: "2025-10"
+                                month_name:
+                                  type: string
+                                  example: "Oct 2025"
+                                  description: "Nome do mês em inglês (padrão do Carbon)"
+                                sales_count:
+                                  type: integer
+                                  example: 37
+                                sales_amount:
+                                  type: number
+                                  example: 8445534.48
+                                formatted_amount:
+                                  type: string
+                                  example: "R$ 8.445.534,48"
+        '401':
+          description: Token inválido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
