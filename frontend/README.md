@@ -11,7 +11,7 @@
 
 - [Visão Geral](#visão-geral)
 - [Tecnologias](#tecnologias)
-- [Design Patterns](#design-patterns-e-arquitetura)
+- [Arquitetura](#arquitetura)
 - [Instalação](#instalação)
 - [Estrutura](#estrutura)
 - [Build](#build)
@@ -189,19 +189,6 @@ npm run dev
 # Do diretório raiz do projeto
 docker-compose up -d
 docker-compose exec frontend npm install
-```
-
-## � Estrutura
-
-```
-src/
-├── components/       # Componentes reutilizáveis
-├── views/           # Páginas da aplicação
-├── stores/          # Estado global (Pinia)
-├── services/        # Serviços de API
-├── types/           # Tipos TypeScript
-├── router/          # Configuração de rotas
-└── utils/           # Utilitários
 ```
 
 ## Build

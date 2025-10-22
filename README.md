@@ -1,4 +1,4 @@
-# 🚀 Sistema de Gestão de Vendas e Comissões
+# Sistema de Gestão de Vendas e Comissões
 
 ![Laravel](https://img.shields.io/badge/Laravel-12.x-red?style=for-the-badge&logo=laravel)
 ![Vue.js](https://img.shields.io/badge/Vue.js-3.x-green?style=for-the-badge&logo=vue.js)
@@ -7,7 +7,7 @@
 
 > **Sistema completo de vendas com comissão automática de 8,5% - Teste Técnico Tray**
 
-## 📋 Requisitos Atendidos
+## Requisitos Atendidos
 
 ### API (Laravel)
 - ✅ Cadastrar vendedores (nome + email)
