@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Unit\Services\Dashboard;
+namespace Tests\Unit\Services;
 
 use App\Repositories\Contracts\Sales\SaleRepositoryInterface;
 use App\Repositories\Contracts\Sellers\SellerRepositoryInterface;

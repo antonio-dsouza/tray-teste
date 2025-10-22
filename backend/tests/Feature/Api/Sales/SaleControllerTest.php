@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Feature\Sales;
+namespace Tests\Feature\Api\Sales;
 
 use App\Models\Sale;
 use App\Models\Seller;
